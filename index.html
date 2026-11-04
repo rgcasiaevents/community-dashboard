@@ -356,7 +356,8 @@ function accountAccessEditor(){return `<div class="field"><label>Role Access</la
 function renderRolePermissions(){return '';}
 function publicRole(a){return a.role==='Developer'?'Senior Events Manager':a.role}
 const menu=[['home','⌂','Home'],['prizes','◇','Prize Center'],['suggestions','✧','Suggestions'],['team','♧','Asia Events Management'],['events','▦','Event Operations'],['accounts','♙','Account Management']];
-function allowed(k){return ['home','prizes','suggestions','team','profile'].includes(k)||(k==='events'&&user.role!=='Player'&&user.role!=='Community Staff')||(k==='accounts'&&can('Developer','Executive Manager','Senior Global Admin','Global Admin','Senior Events Manager'))}
+// Asia Events Management is a public community directory; every signed-in user, including Players, can view it.
+function allowed(k){if(k==='team')return true;return ['home','prizes','suggestions','profile'].includes(k)||(k==='events'&&user.role!=='Player'&&user.role!=='Community Staff')||(k==='accounts'&&can('Developer','Executive Manager','Senior Global Admin','Global Admin','Senior Events Manager'))}
 function enter(){document.getElementById('auth').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('sideName').textContent=user.name;document.getElementById('sideRole').textContent=publicRole(user);refreshAccountHeader();navigate('home')}
 async function logout(){if(sb)await sb.auth.signOut();liveAuthId=null;if(realtimeChannel){await sb.removeChannel(realtimeChannel);realtimeChannel=null}closeAccountMenu();closeSearch();user=null;document.getElementById('app').classList.add('hidden');document.getElementById('auth').classList.remove('hidden');document.getElementById('loginPassword').value='';document.getElementById('sidebar').classList.remove('open')}
 function toggleNav(k){navigate(k)}

@@ -524,6 +524,9 @@
 
 
 
+
+/* V5.8.63: honest partial-data status */
+.tag.warning{color:#ffd27a!important;border-color:rgba(255,190,70,.45)!important;background:rgba(120,75,10,.18)!important}
 </style><style id="rgc-v531-user-refinements">
 /* V5.3.1 requested refinements: complete hover labels, public profile identity, and role taxonomy. */
 .topbar{overflow:visible;gap:clamp(12px,1.5vw,26px)}
@@ -944,7 +947,26 @@ async function registerSession(){const {data,error}=await sb.rpc('register_curre
 async function finishLogin(user,profile,guest=false,sessionAlreadyRegistered=false){state.user=user;state.session=(await sb.auth.getSession()).data.session;state.profile=profile;state.isGuest=guest;state.role=profile?.account_type||'player';if(!sessionAlreadyRegistered)await registerSession();lockDevice(user.id);if(!guest){try{await rgcV3LoadAccess()}catch(e){console.warn('Access assignments could not be loaded:',e.message);rgcV3Access={admin:false,developer:state.role==='developer',permissions:{}}}}showTransition('ACCESS GRANTED','Preparing your RGC community dashboard…',3,async()=>{ $('#loginScreen').classList.add('hidden');$('#appShell').classList.remove('hidden');applyRole();await loadAll();startRealtime();});}
 function applyRole(){const name=state.profile?.display_name||state.user?.user_metadata?.display_name||'RGC Guest';const headerName=$('#headerName'),roleLabel=$('#roleLabel'),headerAvatar=$('#headerAvatar'),composeAvatar=$('#composeAvatar'),profileShortcut=$('#profileShortcut');if(headerName)headerName.textContent=name;if(roleLabel)roleLabel.textContent=state.role==='developer'?'Developer Access':isStaff()?'Staff Access':state.isGuest?'Guest Player':'Registered Player';if(headerAvatar)headerAvatar.src=avatarSrc(state.profile);if(composeAvatar)composeAvatar.src=avatarSrc(state.profile);if(profileShortcut)profileShortcut.title='Open profile';$$('.staff-only').forEach(x=>x.classList.toggle('hidden',!isStaff()));$$('[data-developer-only]').forEach(x=>x.classList.toggle('hidden',!isDeveloper()));}
 async function loginGuest(name){const {data,error}=await sb.auth.signInAnonymously({options:{data:{display_name:name.trim()}}});if(error)throw error;await finishLogin(data.user,{display_name:name.trim(),account_type:'player',is_guest:true},true)}
-async function loginAccount(id,pw){const {data,error}=await sb.functions.invoke('account-login',{body:{account_id:id.trim(),password:pw}});if(error)throw new Error(error.message||'Account ID or password is incorrect.');if(!data?.access_token||!data?.refresh_token)throw new Error(data?.error||'Account ID or password is incorrect.');const {data:sessionData,error:setError}=await sb.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});if(setError)throw setError;/* IMPORTANT: profiles has a restrictive active-session RLS policy. Register this Auth session BEFORE querying profiles, otherwise the profile SELECT is filtered to an empty result. */const {error:sessionError}=await sb.rpc('register_current_session',{p_device_label:navigator.platform||'Browser'});if(sessionError)throw new Error('Your login was authenticated, but this session could not be registered: '+sessionError.message);const {data:p,error:pe}=await sb.from('profiles').select('*').eq('user_id',sessionData.user.id).maybeSingle();if(pe)throw pe;if(!p)throw new Error('Your RGC profile is not set up yet. Please contact an administrator.');if(state.accessMode==='player'&&p.account_type!=='player'){await sb.auth.signOut();throw new Error('This is not a Player Account. Select Staff Access to sign in with this account.')}if(state.accessMode==='staff'&&!['staff','developer'].includes(p.account_type)){await sb.auth.signOut();throw new Error('This is not a Staff Account. Select Player Account to sign in with this account.')}if(p.account_status&&p.account_status!=='active'){await sb.auth.signOut();throw new Error(p.account_status==='pending'?'This account is pending approval.':'This account is suspended. Please contact an administrator.')}await finishLogin(sessionData.user,p,false,true)}
+async function loginAccount(id,pw){
+  const {data,error}=await sb.functions.invoke('account-login',{body:{account_id:id.trim(),password:pw}});
+  if(error){
+    const status=Number(error?.context?.status||error?.status||0);
+    if(status===400||status===401||status===403){
+      throw new Error('The Account ID or password you entered is incorrect. Please check your credentials and try again.');
+    }
+    if(status===404||status===502||status===503){
+      throw new Error('The login service is temporarily unavailable. Please try again in a moment.');
+    }
+    console.error('[RGC authentication] account-login failed:',error);
+    throw new Error('We could not complete your sign-in. Please try again. If the problem continues, contact RGC support.');
+  }
+  if(!data?.access_token||!data?.refresh_token){
+    const detail=String(data?.error||'').toLowerCase();
+    if(/invalid|incorrect|password|credential|account not found|user not found/.test(detail)){
+      throw new Error('The Account ID or password you entered is incorrect. Please check your credentials and try again.');
+    }
+    throw new Error('We could not complete your sign-in. Please try again. If the problem continues, contact RGC support.');
+  }const {data:sessionData,error:setError}=await sb.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});if(setError)throw setError;/* IMPORTANT: profiles has a restrictive active-session RLS policy. Register this Auth session BEFORE querying profiles, otherwise the profile SELECT is filtered to an empty result. */const {error:sessionError}=await sb.rpc('register_current_session',{p_device_label:navigator.platform||'Browser'});if(sessionError)throw new Error('Your login was authenticated, but this session could not be registered: '+sessionError.message);const {data:p,error:pe}=await sb.from('profiles').select('*').eq('user_id',sessionData.user.id).maybeSingle();if(pe)throw pe;if(!p)throw new Error('Your RGC profile is not set up yet. Please contact an administrator.');if(state.accessMode==='player'&&p.account_type!=='player'){await sb.auth.signOut();throw new Error('This is not a Player Account. Select Staff Access to sign in with this account.')}if(state.accessMode==='staff'&&!['staff','developer'].includes(p.account_type)){await sb.auth.signOut();throw new Error('This is not a Staff Account. Select Player Account to sign in with this account.')}if(p.account_status&&p.account_status!=='active'){await sb.auth.signOut();throw new Error(p.account_status==='pending'?'This account is pending approval.':'This account is suspended. Please contact an administrator.')}await finishLogin(sessionData.user,p,false,true)}
 async function registerAccount(id,name,pw){const email=accountEmail(id);const {data,error}=await sb.auth.signUp({email,password:pw,options:{data:{display_name:name.trim(),account_id:id.trim()}}});if(error)throw error;if(!data.user)throw new Error('Registration could not be completed. Please try again.');if(!data.session)throw new Error('Your account was created, but email confirmation is enabled. Ask the administrator to disable email confirmations for this private Account ID login flow, then sign in.');const {error:regError}=await sb.rpc('register_current_session',{p_device_label:navigator.platform||'Browser'});if(regError)throw regError;const {error:pe}=await sb.from('profiles').insert({user_id:data.user.id,account_id:id.trim(),display_name:name.trim(),account_type:'player',is_guest:false});if(pe){await sb.auth.signOut();if(pe.code==='23505')throw new Error('That Account ID or RGC Display Name is already taken.');throw pe}const {data:p}=await sb.from('profiles').select('*').eq('user_id',data.user.id).single();await finishLogin(data.user,p,false)}
 async function logout(withTransition=true){
  // Revoke the server-side session on a best-effort basis, but never let a slow
@@ -1178,7 +1200,17 @@ async function renderProfile(){if(!state.user)return;const id=state.profileTarge
 async function loadRegionMembers(regionId){const {data,error}=await sb.from('region_memberships').select('*').eq('region_id',regionId);if(error){$('#membershipList').innerHTML='<div class="empty">Unable to load region members.</div>';return}$('#membershipList').innerHTML=(data||[]).map(m=>`<div class="list-item"><div class="grow"><strong>${esc(profileOf(m.user_id).display_name)}${verifiedBadge(profileOf(m.user_id))}</strong><small>${esc(m.role)}</small></div><button class="btn ghost small" data-remove-member="${m.user_id}">Remove</button></div>`).join('')||'<div class="empty">No members assigned yet.</div>'}async function renderManagement(){if(!isStaff())return;$('#regionManagementGrid').innerHTML=state.regions.map(r=>`<button class="card cardpad" data-select-region="${r.id}" style="text-align:left;color:white"><div class="eyebrow">REGIONAL WORKSPACE</div><h2 style="font:800 23px Rajdhani;margin:8px 0">${esc(r.name)} Events Management</h2><p class="muted">Manage events, announcements, prizes, and regional details.</p></button>`).join('')+(isDeveloper()?'<button class="card cardpad" id="createRegionTile" style="text-align:center;color:white;border-style:dashed"><div style="font-size:34px">＋</div><strong>Create New Region</strong><p class="muted">Add a new regional workspace.</p></button>':'');const rid=$('#managementRegionSelect').value||state.regions[0]?.id;$('#managementRegionLabel').textContent=regionName(rid);const list=state[state.mgmtTab==='announcements'?'announcements':state.mgmtTab==='events'?'events':'distributions'].filter(x=>x.region_id===rid);$('#managementContent').innerHTML=state.mgmtTab==='members'?`<div class="formgrid"><div class="field wide"><label>Assign Existing RGC Account</label><select id="membershipUser"><option value="">Select a player or staff account</option>${Object.values(state.profiles).map(p=>`<option value="${p.user_id}">${esc(p.display_name)}${p.account_id?' · '+esc(p.account_id):''}</option>`).join('')}</select></div><div class="field"><label>Region Role</label><select id="membershipRole"><option value="player">Player</option><option value="staff">Staff</option><option value="regional_manager">Regional Manager</option></select></div><div class="field" style="align-self:end"><button class="btn" id="addMembership">Add to Region</button></div></div><div id="membershipList" style="margin-top:15px"></div>`:`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn small" id="managementCreate">＋ Create ${state.mgmtTab==='announcements'?'Announcement':state.mgmtTab==='events'?'Event':'Reward Distribution'}</button></div>`+list.map(x=>`<div class="list-item"><div class="grow"><strong>${esc(x.title)}</strong><small>${esc(x.status)} · ${fmt(x.created_at)}</small></div></div>`).join('')||'<div class="empty">No records in this workspace yet.</div>';if(state.mgmtTab==='members')loadRegionMembers(rid)}
 async function loadStaffSuggestions(){if(!isStaff())return;const {data,error}=await sb.from('suggestions').select('*').eq('status',state.suggestionFilter).order('created_at',{ascending:false});if(error){err(error);return}state.staffSuggestions=data||[];$('#staffSuggestions').innerHTML=state.staffSuggestions.map(s=>`<div class="card cardpad" style="margin-bottom:12px"><div class="sectionhead"><div><span class="tag">${esc(s.suggestion_type)}</span><h2 style="margin:7px 0">${esc(s.channel_name||'Suggestion')}</h2></div><span class="tag ${s.status==='addressed'?'live':'pending'}">${esc(s.status)}</span></div><p>${esc(s.message)}</p>${s.staff_response?`<div class="detail">${esc(s.staff_response)}<br><small>Addressed by ${esc(profileOf(s.addressed_by).display_name)}${verifiedBadge(profileOf(s.addressed_by))}</small></div>`:''}${s.status==='pending'?`<button class="btn small" data-address-suggestion="${s.id}">Respond & Mark Addressed</button>`:''}</div>`).join('')||'<div class="empty">No suggestions in this filter.</div>'}
 async function loadNotifications(){if(!isStaff())return;const {data,error}=await sb.from('staff_notifications').select('*').order('created_at',{ascending:false}).limit(100);if(error){err(error);return}state.notifications=data||[];$('#notificationsList').innerHTML=state.notifications.map(n=>`<div class="notification ${n.read_at?'':'unread'}"><span>♧</span><div class="grow"><strong>${esc(n.title)}</strong><p>${esc(n.message)}</p><small class="muted">${fmt(n.created_at)}</small></div>${!n.read_at?`<button class="btn ghost small" data-read-notification="${n.id}">Mark read</button>`:''}</div>`).join('')||'<div class="empty">No notifications yet.</div>';$('#notificationDot').classList.toggle('hidden',!state.notifications.some(n=>!n.read_at))}
-function startRealtime(){if(state.sessionMonitor)clearInterval(state.sessionMonitor);state.sessionMonitor=setInterval(async()=>{if(!state.user)return;try{const {data,error}=await sb.rpc('is_current_session');if(!error&&data===false){toast('Your RGC session was replaced by a newer login.',true);await sb.auth.signOut();clearDevice();$('#appShell').classList.add('hidden');$('#loginScreen').classList.remove('hidden')}}catch(e){console.warn('Session validation check failed',e)}},20000);if(state.channel)sb.removeChannel(state.channel);state.channel=sb.channel('rgc-global-live').on('postgres_changes',{event:'*',schema:'public'},payload=>{const table=payload.table;refreshTable(table)}).subscribe(status=>{if(status==='SUBSCRIBED'){$('#syncLabel').textContent='Realtime connected';$('#connectionStatus').textContent='● LIVE SYNC'}else if(status==='CHANNEL_ERROR'){$('#syncLabel').textContent='Realtime reconnecting…'}})}
+function startRealtime(){if(state.sessionMonitor)clearInterval(state.sessionMonitor);state.sessionMonitor=setInterval(async()=>{if(!state.user)return;try{const {data,error}=await sb.rpc('is_current_session');if(!error&&data===false){toast('Your RGC session was replaced by a newer login.',true);await sb.auth.signOut();clearDevice();$('#appShell').classList.add('hidden');$('#loginScreen').classList.remove('hidden')}}catch(e){console.warn('Session validation check failed',e)}},20000);if(state.channel)sb.removeChannel(state.channel);state.channel=sb.channel('rgc-global-live').on('postgres_changes',{event:'*',schema:'public'},payload=>{const table=payload.table;refreshTable(table)}).subscribe(status=>{if(status==='SUBSCRIBED'){
+  if(state._dataLoadFailures?.length){
+    $('#syncLabel').textContent='Realtime connected · some data access is blocked';
+    $('#connectionStatus').textContent='● PARTIAL DATA';
+    $('#connectionStatus').className='tag warning';
+  }else{
+    $('#syncLabel').textContent='Realtime connected';
+    $('#connectionStatus').textContent='● LIVE SYNC';
+    $('#connectionStatus').className='tag live';
+  }
+}else if(status==='CHANNEL_ERROR'){$('#syncLabel').textContent='Realtime reconnecting…'}})}
 async function refreshTable(table){const map={regions:['regions'],profiles:['profiles'],posts:['posts'],events:['events'],announcements:['announcements'],reward_distributions:['distributions'],reward_entries:['entries'],prize_appeals:['appeals'],suggestions:['suggestions'],staff_notifications:['notifications'],rgc_user_notifications:['user_notifications'],user_follows:['follows'],post_replies:['replies'],post_reactions:['reactions']};if(!map[table])return;try{if(table==='regions')state.regions=await fetchRows('regions',{order:'name'});if(table==='profiles'){const p=await fetchRows('profiles',{limit:300});state.profiles=Object.fromEntries(p.map(x=>[x.user_id,x]));state.profile=p.find(x=>x.user_id===state.user.id)||state.profile}if(table==='posts')state.posts=await fetchRows('posts',{order:'created_at',limit:60});if(table==='events')state.events=await fetchRows('events',{order:'starts_at'});if(table==='announcements')state.announcements=await fetchRows('announcements',{order:'published_at',limit:100});if(table==='reward_distributions')state.distributions=await fetchRows('reward_distributions',{order:'created_at'});if(table==='reward_entries')state.entries=await fetchRows('reward_entries',{order:'created_at'});if(table==='prize_appeals')await loadMySubmissions();if(table==='suggestions'){await loadMySubmissions();if(isStaff())await loadStaffSuggestions()}if(table==='staff_notifications'&&isStaff())await loadNotifications();if(table==='rgc_user_notifications')await loadUserNotifications();if(table==='user_follows')state.follows=await fetchRows('user_follows',{eq:{follower_id:state.user.id}});await populateRegions();renderAll()}catch(e){console.warn('Realtime refresh failed',table,e)}}
 // User actions and CRUD
 let savedEditPostRange=null;
@@ -1839,28 +1871,63 @@ function rgcV4Init(){
 // V5.0 PUBLIC ACCESS + DATA RESILIENCE PATCH
 // Public panels are navigable by guests and players. Writes remain account-gated.
 const rgcV5OriginalLoadAll=loadAll;
+/*
+ * V5.8.63 resilient shared-data loader.
+ * Each table is fetched independently. A single RLS/table error must never
+ * blank otherwise-readable dashboard panels or be reported as a full sync.
+ */
 loadAll=async function(){
-  const safe=async(table,opts={})=>{try{return await fetchRows(table,opts)}catch(e){console.warn(`[RGC] ${table} unavailable to this account:`,e.message);return []}};
-  const [regions,events,announcements,distributions,posts,profiles,memberships]=await Promise.all([
-    safe('regions',{order:'name'}),safe('events',{order:'starts_at'}),
-    safe('announcements',{order:'published_at',limit:100}),safe('reward_distributions',{order:'created_at'}),
-    safe('posts',{order:'created_at',limit:60}),safe('profiles',{limit:300}),
-    state.isGuest?Promise.resolve([]):safe('region_memberships',{eq:{user_id:state.user.id}})
-  ]);
-  state.regions=regions;state.events=events;state.announcements=announcements;state.distributions=distributions;
-  state.posts=posts;state.profiles=Object.fromEntries(profiles.map(p=>[p.user_id,p]));state.memberships=memberships;
+  const failures=[];
+  const read=async(table,opts={})=>{
+    try{return await fetchRows(table,opts)}
+    catch(error){
+      failures.push({table,message:error?.message||String(error)});
+      console.error(`[RGC data access] ${table} could not be loaded:`,error);
+      return [];
+    }
+  };
+  const tasks=[
+    read('regions',{order:'name'}),
+    read('events',{order:'starts_at'}),
+    read('announcements',{order:'published_at',limit:100}),
+    read('reward_distributions',{order:'created_at'}),
+    read('posts',{order:'created_at',limit:60}),
+    read('profiles',{limit:300}),
+    state.isGuest?Promise.resolve([]):read('region_memberships',{eq:{user_id:state.user.id}})
+  ];
+  const [regions,events,announcements,distributions,posts,profiles,memberships]=await Promise.all(tasks);
+  state.regions=regions;
+  state.events=events;
+  state.announcements=announcements;
+  state.distributions=distributions;
+  state.posts=posts;
+  state.profiles=Object.fromEntries(profiles.map(p=>[p.user_id,p]));
+  state.memberships=memberships;
   state.role=state.isGuest?'player':(state.profile?.account_type||'player');
-  if(memberships.some(m=>['staff','regional_manager'].includes(m.role))&&state.role==='player')state.role='staff';
+  if(memberships.some(m=>['staff','regional_manager'].includes(String(m.role||'').toLowerCase()))&&state.role==='player')state.role='staff';
+
   const ids=distributions.map(d=>d.id);
-  state.entries=ids.length?await safe('reward_entries',{in:{distribution_id:ids}}):[];
-  state.follows=state.isGuest?[]:await safe('user_follows',{eq:{follower_id:state.user.id}});
+  state.entries=ids.length?await read('reward_entries',{in:{distribution_id:ids}}):[];
+  state.follows=state.isGuest?[]:await read('user_follows',{eq:{follower_id:state.user.id}});
   await populateRegions();
-  if(!state.isGuest)await loadMySubmissions();else{state.appeals=[];state.suggestions=[];}
+  if(!state.isGuest)await loadMySubmissions();
+  else{state.appeals=[];state.suggestions=[];}
+
+  state._dataLoadFailures=failures;
   renderAll();
-  const status=$('#connectionStatus');if(status){status.textContent='● LIVE SYNC';status.className='tag live'}
-  if($('#syncLabel'))$('#syncLabel').textContent='Public content loaded';
+
+  const status=$('#connectionStatus');
+  const sync=$('#syncLabel');
+  if(failures.length){
+    const names=[...new Set(failures.map(x=>x.table))];
+    if(status){status.textContent='● PARTIAL DATA';status.className='tag warning'}
+    if(sync)sync.textContent=`Some shared data is blocked: ${names.join(', ')}`;
+    console.warn('[RGC] Dashboard loaded with partial data. Review Supabase grants/RLS for:',failures);
+  }else{
+    if(status){status.textContent='● DATA LOADED';status.className='tag'}
+    if(sync)sync.textContent='Shared dashboard data loaded; connecting live updates…';
+  }
 };
-// Public read-only version of Regional Management for guests and players.
 const rgcV5OriginalRenderManagement=renderManagement;
 renderManagement=async function(){
   if(isStaff())return rgcV5OriginalRenderManagement();

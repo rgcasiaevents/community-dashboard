@@ -887,7 +887,7 @@ button.search-result-row{cursor:pointer}
 <button aria-label="Suggestions" data-view="suggestions" title="Suggestions"><span class="panel-icon">✦</span><span class="panel-label">Suggestions</span></button>
 <button aria-label="RGC Events Management" data-view="management" title="RGC Events Management"><span class="panel-icon">▦</span><span class="panel-label">RGC Events Management</span></button>
 <button aria-label="Developer Tab" class="hidden" data-developer-only="" data-view="accountManagement" title="Developer Tab"><span class="panel-icon">⚙</span><span class="panel-label">Developer Tab</span></button>
-</nav><div class="topactions"><select aria-label="Region filter" class="region-select" id="regionFilter"><option value="all">◎ All Regions</option></select><div class="header-pop-wrap"><button aria-label="Messages" class="iconbtn" id="messageBell" title="Messages"><span aria-hidden="true" class="chat-symbol"></span><i class="dot hidden" id="messageDot"></i><span class="hidden" id="messageUnreadBadge">0</span></button><div class="header-pop hidden" id="messageDropdown"><div class="header-pop-head"><strong>Messages</strong><button class="btn ghost small" id="newMessageBtn">New message</button></div><div class="header-pop-tabs"><button class="active" data-msg-list="inbox">Inbox</button><button data-msg-list="requests">Requests</button></div><div class="header-pop-list" id="messageConversationList"><div class="empty">Your conversations will appear here.</div></div></div></div><div class="header-pop-wrap"><button aria-label="Notifications" class="iconbtn staff-only hidden" id="notificationBell" title="Notifications">🔔<i class="dot hidden" id="notificationDot"></i></button><div class="header-pop hidden" id="notificationDropdown"><div class="header-pop-head"><strong>Notifications</strong><button class="btn ghost small" id="notificationMarkAll">Mark all read</button></div><div class="header-pop-list" id="notificationDropdownList"></div></div></div><div class="user-chip" id="userChip"><button aria-label="Open account menu" class="avatar-trigger" id="accountMenu" title="Account menu"><img alt="avatar" class="avatar" id="headerAvatar"/></button><span class="user-chip-details"><strong id="headerName">Player</strong><small id="headerRole">RGC Player</small></span></div></div></header>
+</nav><div class="topactions"><button type="button" id="rgcPresenceButton" class="rgc-presence-button hidden" aria-label="Online users" title="See who is online"><span class="rgc-presence-live-ring"></span><span id="rgcPresenceCount">0</span><span id="rgcPresenceHoverText" class="rgc-presence-hover-text">0 users online right now</span></button><select aria-label="Region filter" class="region-select" id="regionFilter"><option value="all">◎ All Regions</option></select><div class="header-pop-wrap"><button aria-label="Messages" class="iconbtn" id="messageBell" title="Messages"><span aria-hidden="true" class="chat-symbol"></span><i class="dot hidden" id="messageDot"></i><span class="hidden" id="messageUnreadBadge">0</span></button><div class="header-pop hidden" id="messageDropdown"><div class="header-pop-head"><strong>Messages</strong><button class="btn ghost small" id="newMessageBtn">New message</button></div><div class="header-pop-tabs"><button class="active" data-msg-list="inbox">Inbox</button><button data-msg-list="requests">Requests</button></div><div class="header-pop-list" id="messageConversationList"><div class="empty">Your conversations will appear here.</div></div></div></div><div class="header-pop-wrap"><button aria-label="Notifications" class="iconbtn staff-only hidden" id="notificationBell" title="Notifications">🔔<i class="dot hidden" id="notificationDot"></i></button><div class="header-pop hidden" id="notificationDropdown"><div class="header-pop-head"><strong>Notifications</strong><button class="btn ghost small" id="notificationMarkAll">Mark all read</button></div><div class="header-pop-list" id="notificationDropdownList"></div></div></div><div class="user-chip" id="userChip"><button aria-label="Open account menu" class="avatar-trigger" id="accountMenu" title="Account menu"><img alt="avatar" class="avatar" id="headerAvatar"/></button><span class="user-chip-details"><strong id="headerName">Player</strong><small id="headerRole">RGC Player</small></span></div></div></header>
 <div class="layout"><aside aria-hidden="true" class="sidebar"><div class="side-label">Community</div><nav class="side-nav"><button class="active" data-view="home"><span class="navico">⌂</span>Home</button><button data-view="community"><span class="navico">◉</span>R-Hub</button><button data-view="prizes"><span class="navico">▣</span>Events Hub</button><button data-view="suggestions"><span class="navico">✦</span>Suggestions</button><button data-view="profile"><span class="navico">♙</span>My Profile</button><button class="staff-only hidden" data-view="management"><span class="navico">▦</span>RGC Events Management</button><button class="staff-only hidden" data-view="staffInbox"><span class="navico">▣</span>Staff Inbox</button><button class="staff-only hidden" data-view="notifications"><span class="navico">♧</span>Notifications</button></nav><div class="side-bottom">RGC EVENTS COMMUNITY<br/><span id="roleLabel">Community Member</span><br/>Global community portal</div></aside>
 <main class="main">
 <section class="view active" id="view-home"><div class="page-head"><div><div class="eyebrow">RANKED GAMING CLIENT · GLOBAL COMMUNITY</div><h1>Community Hub</h1><p>Official updates, events, tournaments, and player activity.</p></div><div style="display:flex;align-items:center;gap:10px"><button class="btn hidden" id="homeCreateAnnouncementBtn">＋ Create Announcement</button><span class="tag live" id="connectionStatus" hidden aria-hidden="true">● CONNECTING</span></div><div class="field" style="min-width:190px"><label for="homeRegionFilter">View events and announcements</label><select id="homeRegionFilter"><option value="all">All Regions</option></select></div></div>
@@ -953,7 +953,7 @@ const avatarSrc=p=>p?.avatar_url||`data:image/svg+xml,${encodeURIComponent(`<svg
 function toast(msg,error=false){const t=$('#toastRoot');t.textContent=msg;t.classList.toggle('error',error);t.classList.remove('hidden');clearTimeout(state.toastTimer);state.toastTimer=setTimeout(()=>t.classList.add('hidden'),4200)}
 function err(e){console.error(e);toast(e?.message||'Something went wrong. Please try again.',true)}
 function modal(title,body,actions=''){const root=$('#modalRoot');root.innerHTML=`<div class="modalback" data-close="1"><div class="modal" role="dialog" aria-modal="true"><div class="modalhead"><h3>${esc(title)}</h3><button class="iconbtn" data-close="1" aria-label="Close">×</button></div><div class="modalbody">${body}</div>${actions?`<div class="modalfoot">${actions}</div>`:''}</div></div>`;root.querySelector('.modalback').addEventListener('click',e=>{if(e.target.dataset.close)root.innerHTML=''});}
-function closeModal(){ $('#modalRoot').innerHTML=''; }
+function closeModal(){ $('#modalRoot').innerHTML='';document.body.style.overflow=''; }
 function isStaff(){return ['staff','developer'].includes(String(state.role||'').toLowerCase())||state.regions.some(r=>state.memberships?.some(m=>m.region_id===r.id&&['staff','regional_manager'].includes(String(m.role||'').toLowerCase())))}
 function isDeveloper(){return String(state.role||'').toLowerCase()==='developer'}
 function activeRegionId(){if(state.region!=='all')return state.region;return state.regions[0]?.id||null}
@@ -2524,7 +2524,61 @@ document.addEventListener('DOMContentLoaded',rgcV4Init);
  // V5.6.0 messaging: preserves existing direct-message tables and adds group support.
  const messageState={tab:'inbox',openChats:new Map(),groups:[],unreadBySender:{},closedChats:new Set(),replyTargets:new Map()};
  const messageBell=$id('messageBell'),messageDropdown=$id('messageDropdown');
+ const rgcPresenceState={byUser:new Map(),lastFetch:0,groupMembers:new Map(),refreshing:false};
  function person(uid){return state.profiles?.[uid]||{};}
+ function rgcPresenceOnline(uid){const r=rgcPresenceState.byUser.get(String(uid));return !!r?.is_online;}
+ function rgcPresenceMutual(uid){const r=rgcPresenceState.byUser.get(String(uid));return !!r?.is_mutual;}
+ function rgcGroupHasOnline(groupId){return (rgcPresenceState.groupMembers.get(String(groupId))||[]).some(uid=>String(uid)!==String(state.user?.id)&&rgcPresenceOnline(uid));}
+ function rgcFloatingPeer(c,rows){if(c.peer)return c.peer;const row=(rows||[]).find(x=>String(x.id)===String(c.id));return row?chatPeer(row):messageState.openChats.get(c.id)?.other||'';}
+ function rgcPresenceDotUser(uid){return rgcPresenceMutual(uid)?`<i class="rgc-presence-dot" data-presence-dot-user="${escText(uid)}" aria-label="${rgcPresenceOnline(uid)?'Online':'Offline'}"></i>`:'';}
+ function rgcPresenceDotGroup(id){return `<i class="rgc-presence-dot" data-presence-dot-group="${escText(id)}" aria-label="${rgcGroupHasOnline(id)?'A member is online':'No other members are online'}"></i>`;}
+ function rgcRelativeTime(value){if(!value)return 'No recent sign-in';const ms=Math.max(0,Date.now()-new Date(value).getTime()),m=Math.floor(ms/60000);if(m<1)return 'Just now';if(m<60)return `${m} minute${m===1?'':'s'} ago`;const h=Math.floor(m/60);if(h<24)return `${h} hour${h===1?'':'s'} ago`;const d=Math.floor(h/24);if(d<30)return `${d} day${d===1?'':'s'} ago`;const mo=Math.floor(d/30);return `${mo} month${mo===1?'':'s'} ago`;}
+ function rgcPresenceVisibleRows(){const rows=[...rgcPresenceState.byUser.values()].filter(r=>String(r.user_id)!==String(state.user?.id));if(isDeveloper())return rows;const following=new Set((state.follows||[]).map(f=>String(f.followed_id)));return rows.filter(r=>following.has(String(r.user_id)));}
+ async function rgcRefreshPresence(force=false){
+   if(!state.user||state.isGuest||rgcPresenceState.refreshing)return;
+   if(!force&&Date.now()-rgcPresenceState.lastFetch<5000)return;
+   rgcPresenceState.refreshing=true;
+   try{
+     const {data,error}=await sb.rpc('rgc_presence_visible');
+     if(error)throw error;
+     rgcPresenceState.byUser=new Map((data||[]).map(r=>[String(r.user_id),r]));
+     rgcPresenceState.lastFetch=Date.now();
+     rgcUpdatePresenceButton();rgcApplyPresenceDots();rgcRenderPresenceList();
+   }catch(e){console.warn('RGC presence refresh failed:',e.message||e);}
+   finally{rgcPresenceState.refreshing=false;}
+ }
+ function rgcUpdatePresenceButton(){
+   const b=$id('rgcPresenceButton'),n=$id('rgcPresenceCount');if(!b||!n)return;
+   if(!state.user||state.isGuest){b.classList.add('hidden');return;}
+   const rows=rgcPresenceVisibleRows(),online=rows.filter(r=>r.is_online).length;
+   b.classList.remove('hidden');n.textContent=online>99?'99+':String(online);
+   b.title=`${online} ${online===1?'user is':'users are'} online right now`;
+   const hover=$id('rgcPresenceHoverText');if(hover)hover.textContent='Online now';
+   b.title='View online users';
+   b.setAttribute('aria-label',`${online} ${online===1?'user':'users'} online`);
+ }
+ function rgcPresenceListMarkup(){
+   const rows=rgcPresenceVisibleRows().sort((a,b)=>Number(!!b.is_online)-Number(!!a.is_online)||new Date(b.online_since||b.last_seen_at||0)-new Date(a.online_since||a.last_seen_at||0));
+   const online=rows.filter(r=>r.is_online),offline=rows.filter(r=>!r.is_online&&r.last_seen_at);
+   const rowHtml=r=>{const p=person(r.user_id)||{};const avatar=p.avatar_url||r.avatar_url||'';const name=p.display_name||r.display_name||'RGC User';const stamp=r.online_since||r.last_seen_at;return `<div class="rgc-presence-person"><img src="${escText(avatar)}" alt=""><span class="rgc-presence-person-copy"><strong>${escText(name)}</strong><small>${r.is_online?'Online now':`Logged in ${rgcRelativeTime(stamp)}`}</small></span><i class="rgc-presence-dot ${r.is_online?'online':'offline'}"></i></div>`;};
+   return `<div class="rgc-presence-list"><div class="rgc-presence-section"><strong>Online now <span>${online.length}</span></strong>${online.length?online.map(rowHtml).join(''):'<div class="empty">No one is online right now.</div>'}</div><div class="rgc-presence-section"><strong>Recently online <span>${offline.length}</span></strong>${offline.length?offline.map(rowHtml).join(''):'<div class="empty">No recent activity to show.</div>'}</div></div>`;
+ }
+ function rgcRenderPresenceList(){
+   const body=document.querySelector('#modalRoot .rgc-presence-modal .modalbody');if(!body)return;
+   const top=body.scrollTop;body.innerHTML=rgcPresenceListMarkup();body.scrollTop=top;
+ }
+ function rgcOpenPresenceList(){
+   modal('Community Presence',rgcPresenceListMarkup(),'<button class="btn secondary" data-close="1">Close</button>');
+   const root=$id('modalRoot'),panel=root?.querySelector('.modal');panel?.classList.add('rgc-presence-modal');
+   document.body.style.overflow='hidden';
+   root?.querySelector('.modalback')?.addEventListener('click',e=>{if(e.target?.dataset?.close==='1')document.body.style.overflow='';});
+ }
+ function rgcApplyPresenceDots(){
+   document.querySelectorAll('[data-presence-dot-user]').forEach(el=>{const uid=el.dataset.presenceDotUser;const visible=rgcPresenceMutual(uid);el.classList.toggle('hidden',!visible);el.classList.toggle('online',rgcPresenceOnline(uid));el.classList.toggle('offline',visible&&!rgcPresenceOnline(uid));el.setAttribute('aria-label',rgcPresenceOnline(uid)?'Online':'Offline');});
+   document.querySelectorAll('[data-presence-dot-group]').forEach(el=>{const id=el.dataset.presenceDotGroup;const online=rgcGroupHasOnline(id);el.classList.toggle('online',online);el.classList.toggle('offline',!online);el.setAttribute('aria-label',online?'A group member is online':'No other group members are online');});
+ }
+ $id('rgcPresenceButton')?.addEventListener('mouseenter',()=>{const n=Number($id('rgcPresenceCount')?.textContent||0);$id('rgcPresenceButton').title=`${n} ${n===1?'user is':'users are'} online right now`;});
+ $id('rgcPresenceButton')?.addEventListener('click',async()=>{await rgcRefreshPresence(true);rgcOpenPresenceList();});
  function chatPeer(c){return c.user_one===state.user.id?c.user_two:c.user_one;}
  function renderConversationList(rows,groups=[]){
    const box=$id('messageConversationList');if(!box)return;
@@ -2533,7 +2587,7 @@ document.addEventListener('DOMContentLoaded',rgcV4Init);
      const preview=last?.unsent_at?'This message was unsent.':(last?.body|| (c.status==='pending'?(c.requested_by===state.user.id?'Request sent · Awaiting acceptance':'Message request'):'Start a conversation'));
      return `<div class="header-pop-row rgc-conversation-item" data-conversation-item="${c.id}">
        <div class="rgc-conversation-open" data-open-chat="${c.id}">
-         <img class="avatar" src="${escText(avatarSrc(p))}" alt="">
+         <span class="rgc-presence-avatar-wrap"><img class="avatar" src="${escText(avatarSrc(p))}" alt="">${rgcPresenceDotUser(other)}</span>
          <div class="grow"><strong>${displayNameMarkup(p,'RGC Player')}${verifiedBadge(p)}</strong><small>${escText(preview)}</small></div>
          ${c.unread_count?`<span class="tag">${c.unread_count}</span>`:''}
        </div>
@@ -2546,7 +2600,7 @@ document.addEventListener('DOMContentLoaded',rgcV4Init);
    }).join('');
    const groupRows=groups.map(g=>`<div class="header-pop-row rgc-conversation-item" data-group-item="${g.id}">
      <div class="rgc-conversation-open" data-open-group="${g.id}">
-       ${g.avatar_url?`<img class="avatar" src="${escText(g.avatar_url)}" alt="">`:'<div class="avatar" style="display:grid;place-items:center;background:#542033">♧</div>'}
+       <span class="rgc-presence-avatar-wrap">${g.avatar_url?`<img class="avatar" src="${escText(g.avatar_url)}" alt="">`:'<span class="avatar" style="display:grid;place-items:center;background:#542033">♧</span>'}${rgcPresenceDotGroup(g.id)}</span>
        <div class="grow"><strong>${escText(g.name||'Group Chat')}</strong><small>${g.status==='pending'?'Group message request':'Group conversation'}</small></div>
        ${g.status==='pending'?'<span class="tag">Request</span>':''}
      </div>
@@ -2653,7 +2707,7 @@ document.addEventListener('DOMContentLoaded',rgcV4Init);
    messageState.openChats.forEach(c=>{
      if(c.minimized){
        const p=c.kind==='direct'?person(c.other):{};
-       items.set(c.id,{id:c.id,kind:c.kind||'direct',title:c.title||p.display_name||'Chat',avatar:c.kind==='direct'?avatarSrc(p):c.avatar_url||'',unread:c.kind==='direct'?Number(messageState.unreadBySender[c.other]||0):0});
+       items.set(c.id,{id:c.id,kind:c.kind||'direct',peer:c.other||null,title:c.title||p.display_name||'Chat',avatar:c.kind==='direct'?avatarSrc(p):c.avatar_url||'',unread:c.kind==='direct'?Number(messageState.unreadBySender[c.other]||0):0});
      }
    });
    // Incoming accepted direct messages automatically create a chat head even when
@@ -2665,9 +2719,9 @@ document.addEventListener('DOMContentLoaded',rgcV4Init);
      const existing=messageState.openChats.get(c.id);
      if(existing&&!existing.minimized)return;
      const p=person(uid);
-     items.set(c.id,{id:c.id,kind:'direct',title:p.display_name||'New message',avatar:avatarSrc(p),unread:Number(n)});
+     items.set(c.id,{id:c.id,kind:'direct',peer:uid,title:p.display_name||'New message',avatar:avatarSrc(p),unread:Number(n)});
    });
-   el.innerHTML=[...items.values()].map(c=>`<button class="rgc-floating-chat" data-chat-head="${escText(c.id)}" title="${escText(c.title)}">${c.kind==='group'?(c.avatar?`<img src="${escText(c.avatar)}" alt="">`:'<span class="rgc-chat-head-group">♧</span>'):`<img src="${escText(c.avatar)}" alt="${escText(c.title)}">`}${c.unread>0?`<b>${c.unread>99?'99+':c.unread}</b>`:''}<span class="rgc-chat-head-label">${escText(c.title)}</span></button>`).join('');
+   el.innerHTML=[...items.values()].map(c=>`<button class="rgc-floating-chat" data-chat-head="${escText(c.id)}" title="${escText(c.title)}">${c.kind==='group'?`<span class="rgc-presence-avatar-wrap">${c.avatar?`<img src="${escText(c.avatar)}" alt="">`:'<span class="rgc-chat-head-group">♧</span>'}${rgcPresenceDotGroup(c.id)}</span>`:`<span class="rgc-presence-avatar-wrap"><img src="${escText(c.avatar)}" alt="${escText(c.title)}">${rgcPresenceDotUser(rgcFloatingPeer(c,rows))}</span>`}${c.unread>0?`<b>${c.unread>99?'99+':c.unread}</b>`:''}<span class="rgc-chat-head-label">${escText(c.title)}</span></button>`).join('');
    el.querySelectorAll('[data-chat-head]').forEach(b=>b.onclick=async()=>{
      const id=b.dataset.chatHead,existing=messageState.openChats.get(id);
      if(existing){existing.minimized=false;renderChatWindows();await loadChatMessages(id);return;}
@@ -2716,7 +2770,10 @@ document.addEventListener('DOMContentLoaded',rgcV4Init);
    if(hiddenGroupsError)console.warn('Could not load hidden group chats:',hiddenGroupsError.message);
    const hiddenGroupIds=new Set((hiddenGroups||[]).map(x=>x.group_id));
    const {data:gm}=await sb.from('rgc_dm_group_members').select('group_id,role,status,rgc_dm_groups(id,name,avatar_url,created_by)').eq('user_id',state.user.id).in('status',messageState.tab==='inbox'?['accepted']:['pending']);
-   const groups=(gm||[]).map(x=>({...x.rgc_dm_groups,status:x.status,role:x.role})).filter(g=>g?.id&&!hiddenGroupIds.has(g.id));messageState.groups=groups;renderConversationList(shown,groups);renderFloatingChats(rows);
+   const groups=(gm||[]).map(x=>({...x.rgc_dm_groups,status:x.status,role:x.role})).filter(g=>g?.id&&!hiddenGroupIds.has(g.id));messageState.groups=groups;
+   const groupIds=groups.map(g=>g.id);rgcPresenceState.groupMembers=new Map();
+   if(groupIds.length){const {data:groupMembers}=await sb.from('rgc_dm_group_members').select('group_id,user_id').in('group_id',groupIds).eq('status','accepted');(groupMembers||[]).forEach(m=>{const key=String(m.group_id);if(!rgcPresenceState.groupMembers.has(key))rgcPresenceState.groupMembers.set(key,[]);rgcPresenceState.groupMembers.get(key).push(String(m.user_id));});}
+   await rgcRefreshPresence(true);renderConversationList(shown,groups);renderFloatingChats(rows);
    const badge=$id('messageUnreadBadge');if(badge){badge.textContent=counts.total>99?'99+':counts.total;badge.classList.toggle('hidden',counts.total===0);}
    const dot=$id('messageDot');if(dot)dot.classList.add('hidden');
  }
@@ -2925,12 +2982,13 @@ async function loadChatMessages(id){
    if(unread.length)await sb.from('rgc_dm_messages').update({seen_at:new Date().toISOString()}).in('id',unread);
    const chat=messageState.openChats.get(id);
    if(chat){
-     const {data:presence}=await sb.from('rgc_dm_presence').select('last_seen_at,typing_conversation_id,typing_until').eq('user_id',chat.other).maybeSingle();
-     const online=presence?.last_seen_at&&Date.now()-new Date(presence.last_seen_at).getTime()<60000;
-     const typing=online&&presence?.typing_conversation_id===id&&presence?.typing_until&&new Date(presence.typing_until).getTime()>Date.now();
+     const {data:presenceRows}=await sb.rpc('rgc_presence_visible');
+     const presence=(presenceRows||[]).find(x=>String(x.user_id)===String(chat.other));
+     const online=!!presence?.is_online;
+     const typing=presence?.typing_conversation_id===id&&presence?.typing_until&&new Date(presence.typing_until).getTime()>Date.now();
      const status=document.querySelector(`[data-chat-presence="${id}"]`);
      const latestMine=[...rows].reverse().find(m=>m.sender_id===state.user.id);
-     if(status)status.textContent=typing?'Typing…':latestMine?.seen_at?'Seen':online?'Online':'Offline';
+     if(status)status.textContent=typing?'Typing…':latestMine?.seen_at?'Seen':latestMine?.delivered_at?'Delivered':'Sent';
    }
    loadConversations();
  }
@@ -2989,7 +3047,7 @@ async function loadChatMessages(id){
      const subtitle=c.kind==='direct'?profileRoleLabel(p):'Group Chat';
      return `<section class="rgc-chat-window" data-chat="${c.id}">
        <header class="rgc-chat-title">
-         <img class="rgc-chat-header-avatar" src="${escText(avatar)}" alt="">
+         <span class="rgc-presence-avatar-wrap rgc-chat-header-avatar-wrap"><img class="rgc-chat-header-avatar" src="${escText(avatar)}" alt="">${c.kind==='group'?rgcPresenceDotGroup(c.id):rgcPresenceDotUser(c.other)}</span>
          <div class="rgc-chat-header-identity"><strong>${escText(c.title)}</strong><small>${escText(subtitle)}</small></div>
          ${c.kind==='group'?`<button data-group-info="${c.id}" title="Group info" aria-label="Group information">ⓘ</button>`:''}
          <button data-min-chat="${c.id}" title="Minimize" aria-label="Minimize chat">−</button>
@@ -3323,9 +3381,15 @@ async function loadChatMessages(id){
        }catch(x){err(x);}
      };
    });
-   const beat=async()=>{if(!state.user||state.isGuest)return;await sb.from('rgc_dm_presence').upsert({user_id:state.user.id,last_seen_at:new Date().toISOString(),typing_conversation_id:null,typing_until:null});const {data:mine}=await sb.from('rgc_dm_conversations').select('id').or(`user_one.eq.${state.user.id},user_two.eq.${state.user.id}`);const ids=(mine||[]).map(x=>x.id);if(ids.length)await sb.from('rgc_dm_messages').update({delivered_at:new Date().toISOString()}).in('conversation_id',ids).neq('sender_id',state.user.id).is('delivered_at',null);};
-   setInterval(beat,25000);beat();
-   const ch=sb.channel('rgc-v5813-messaging').on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_messages'},payload=>{const id=payload.new?.conversation_id||payload.old?.conversation_id;if(messageState.openChats.has(id))loadChatMessages(id);loadConversations();}).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_conversations'},()=>loadConversations()).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_presence'},()=>{messageState.openChats.forEach((c,id)=>loadChatMessages(id));}).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_group_messages'},payload=>{const id=payload.new?.group_id||payload.old?.group_id;if(messageState.openChats.has(id))loadGroupMessages(id);loadConversations();}).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_group_members'},()=>loadConversations()).subscribe();
+   const beat=async()=>{if(!state.user||state.isGuest)return;const {error:presenceBeatError}=await sb.rpc('rgc_presence_heartbeat');if(presenceBeatError){console.warn('Presence heartbeat RPC unavailable; using legacy heartbeat:',presenceBeatError.message);await sb.from('rgc_dm_presence').upsert({user_id:state.user.id,last_seen_at:new Date().toISOString(),typing_conversation_id:null,typing_until:null});}await rgcRefreshPresence(true);const {data:mine}=await sb.from('rgc_dm_conversations').select('id').or(`user_one.eq.${state.user.id},user_two.eq.${state.user.id}`);const ids=(mine||[]).map(x=>x.id);if(ids.length)await sb.from('rgc_dm_messages').update({delivered_at:new Date().toISOString()}).in('conversation_id',ids).neq('sender_id',state.user.id).is('delivered_at',null);};
+   // Keep the signed-in user's heartbeat fresh and poll the permission-filtered
+   // presence RPC frequently. Direct table subscriptions cannot expose other
+   // users' rows under the privacy-preserving RLS policy, so this RPC poll is the
+   // safe near-real-time path for follower/developer visibility.
+   setInterval(beat,15000);beat();
+   setInterval(()=>{if(!document.hidden)rgcRefreshPresence(true);},3500);
+   document.addEventListener('visibilitychange',()=>{if(!document.hidden){beat();rgcRefreshPresence(true);}});
+   const ch=sb.channel('rgc-v5813-messaging').on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_messages'},payload=>{const id=payload.new?.conversation_id||payload.old?.conversation_id;if(messageState.openChats.has(id))loadChatMessages(id);loadConversations();}).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_conversations'},()=>loadConversations()).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_presence'},async()=>{await rgcRefreshPresence(true);}).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_group_messages'},payload=>{const id=payload.new?.group_id||payload.old?.group_id;if(messageState.openChats.has(id))loadGroupMessages(id);loadConversations();}).on('postgres_changes',{event:'*',schema:'public',table:'rgc_dm_group_members'},()=>loadConversations()).subscribe();
    setInterval(()=>{
      if(document.hidden)return;
      messageState.openChats.forEach((c,id)=>loadChatMessages(id));
@@ -6697,4 +6761,9 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
   }
 }</style>
 
+
+<style id="rgc-v5872-community-presence">
+#rgcPresenceButton{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:42px;height:38px;padding:0 11px;border:1px solid #303747;border-radius:22px;background:#111620;color:#f4f6fa;font-weight:800;cursor:pointer;transition:width .18s,border-color .18s,background .18s}#rgcPresenceButton:hover{border-color:#35c96b;background:#14221b}#rgcPresenceButton .rgc-presence-hover-text{display:none;white-space:nowrap;font-size:11px;font-weight:700;color:#dce8df}#rgcPresenceButton:hover .rgc-presence-hover-text{display:inline}#rgcPresenceButton:hover #rgcPresenceCount{display:none}#rgcPresenceButton .rgc-presence-live-ring{width:10px;height:10px;border-radius:50%;background:#36c965;box-shadow:0 0 0 3px #36c96522}#rgcPresenceButton #rgcPresenceCount{font-variant-numeric:tabular-nums;font-size:13px}.rgc-presence-avatar-wrap{position:relative;display:inline-flex;flex:0 0 auto;vertical-align:middle;line-height:0}.rgc-presence-avatar-wrap>.avatar{display:block}.rgc-presence-dot{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;border:2px solid #10141d;background:#e04455;box-shadow:0 0 0 1px #0005;display:block;z-index:2}.rgc-presence-dot.online{background:#35c965}.rgc-presence-dot.offline{background:#e04455}.rgc-presence-dot.hidden{display:none!important}.rgc-chat-header-avatar-wrap{width:38px;height:38px}.rgc-chat-header-avatar-wrap .rgc-chat-header-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover}.rgc-chat-header-avatar-wrap .rgc-presence-dot{width:13px;height:13px}.rgc-presence-modal{display:flex;flex-direction:column;overflow:hidden;max-height:90vh}.rgc-presence-modal .modalhead,.rgc-presence-modal .modalfoot{flex:0 0 auto}.rgc-presence-modal .modalbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}.rgc-presence-list{display:grid;gap:18px;max-height:none;overflow:visible}.rgc-presence-section{display:grid;gap:8px}.rgc-presence-section>strong{display:flex;justify-content:space-between;align-items:center;color:#f4f6fa;font-size:13px}.rgc-presence-section>strong span{color:#9eacc2;font-size:12px}.rgc-presence-person{display:flex;align-items:center;gap:11px;padding:9px 10px;border:1px solid #303747;border-radius:11px;background:#111620}.rgc-presence-person>img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#252c39}.rgc-presence-person-copy{display:grid;gap:3px;min-width:0;flex:1}.rgc-presence-person-copy strong{color:#f3f5fa;font-size:13px}.rgc-presence-person-copy small{color:#9eacc2;font-size:11px}.rgc-presence-person>.rgc-presence-dot{position:static;flex:0 0 11px;width:11px;height:11px;border:0;box-shadow:none}.rgc-presence-person{position:relative}.rgc-conversation-open>.rgc-presence-avatar-wrap{width:42px;height:42px}.rgc-conversation-open>.rgc-presence-avatar-wrap .avatar{width:42px;height:42px}.rgc-floating-chat>.rgc-presence-avatar-wrap{width:100%;height:100%}.rgc-floating-chat>.rgc-presence-avatar-wrap>img,.rgc-floating-chat>.rgc-presence-avatar-wrap>.rgc-chat-head-group{width:100%;height:100%;border-radius:50%;object-fit:cover}.rgc-floating-chat>.rgc-presence-avatar-wrap>.rgc-presence-dot{right:-4px;bottom:-4px;width:13px;height:13px;border:2px solid #090c13}.rgc-chat-title>.rgc-presence-avatar-wrap{margin-right:2px}
+@media(max-width:620px){#rgcPresenceButton{min-width:34px;height:34px;padding:0 8px;gap:6px}.rgc-presence-dot{width:11px;height:11px}}
+</style>
 </body></html>

@@ -4010,10 +4010,16 @@ async function loadChatMessages(id){
           ||/^Events\s*[-·:]\s*Executive Manager\b/i.test(title);
         const isRegionalSeniorStaff=/\bSenior\s+Events\s+Staff\b/i.test(title)
           ||/\bRegional\s+Senior\s+Staff\b/i.test(title);
-        if(matchesRegion(rr.region_id,def.region_slug)&&isRegionalExecutive)tier='regionalExecutive';
-        else if(matchesRegion(rr.region_id,def.region_slug)&&isRegionalSeniorStaff)tier='regionalSeniorStaff';
-        else tier=globalTierFor(category,title);
-        if(!tier&&matchesRegion(rr.region_id,def.region_slug)){
+        // A role with an explicit region assignment/catalog slug is regional-only.
+        // Never let its broad/legacy category (e.g. 'RGC Executive Management')
+        // promote it into a global tier while viewing a different region.
+        const isRegionScoped=!!rr.region_id||!!def.region_slug||isRegionalExecutive||isRegionalSeniorStaff;
+        const isInSelectedRegion=matchesRegion(rr.region_id,def.region_slug);
+        if(isRegionScoped&&!isInSelectedRegion)continue;
+        if(isInSelectedRegion&&isRegionalExecutive)tier='regionalExecutive';
+        else if(isInSelectedRegion&&isRegionalSeniorStaff)tier='regionalSeniorStaff';
+        else if(!isRegionScoped)tier=globalTierFor(category,title);
+        if(!tier&&isInSelectedRegion){
           if(/community (staff|manager|management)/i.test(title)||/community/i.test(category))tier='regionalCommunity';
           else if(/executive manager/i.test(title))tier='regionalExecutive';
           else if(/senior.*(events )?(staff|manager)|senior staff/i.test(title)||/senior staff/i.test(category))tier='regionalSeniorStaff';
@@ -4030,15 +4036,16 @@ async function loadChatMessages(id){
         else if(/events (staff|manager)/i.test(title))tier='regionalManagement';
         if(tier)add(p,tier,title);
       }
+      const primaryDeveloper=people.find(p=>p.user_id==='8c1a9661-53ed-4d67-8cb1-23a04d002b2f'||String(p.account_id||'').toLowerCase()==='sire0210');
       for(const row of admins){
         const p=byId.get(row.user_id);if(!p)continue;
         const role=String(row.admin_role||'');
         const adminTier=globalTierFor(role,role);
-        if(adminTier)add(p,adminTier,role);
+        // The primary Developer's executive designation is regional (Asia),
+        // not an RGC-wide executive seat in every regional organization chart.
+        if(adminTier&&!(primaryDeveloper&&p.user_id===primaryDeveloper.user_id&&adminTier==='globalExecutive'))add(p,adminTier,role);
       }
-      // The primary Developer is also the Asia Events Executive Manager.
-      // Keep this regional assignment visible independently of global admin-role rows.
-      const primaryDeveloper=people.find(p=>p.user_id==='8c1a9661-53ed-4d67-8cb1-23a04d002b2f'||String(p.account_id||'').toLowerCase()==='sire0210');
+      // Keep the primary Developer visible only as Asia Events Executive Manager.
       if(primaryDeveloper&&String(selectedName).trim().toLowerCase()==='asia'){
         add(primaryDeveloper,'regionalExecutive','Asia Events - Executive Manager');
       }
